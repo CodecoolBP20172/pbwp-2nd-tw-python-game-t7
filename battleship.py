@@ -4,347 +4,218 @@ import time
 import random
 from tkinter import font
 
-phase = 0
-# 0 = prep phase
-# 1 = ai prep phase
-# 2 = battle phase
 
-hp1 = 15  # predetermined
-hp2 = 15  # got to pay attention!!!!
+# One extra variable needed to handle phase
+# TODO: Deduct board2 from prep_changer arguments
+#       Paste the necessary arguments of prep_changer into the key bindings.
+#       Starter doesn't need look == 2
 
-board1 = [0] * 100  # from 0-99 a 100 tiles
-board2 = [0] * 100  # from 0-99 a 100 tiles
+def changer(x):
+    global phase
+    global board1
+    global board2
+    global hp1
+    global hp2
+    global hitlist1
+    global hitlist2
 
-pos = 45
-look = 1
+    if phase == 2:
+        hit = shot(x, board2)
+        if hit == 1 and x not in hitlist1:
+            hitlist1.append(x)
+            hp2 = hp2 - hit
+        board2 = board_changer(x, board2)
+        tile_number_1 = board_value(x, board2)
+        print(str(tile_number_1))
+        ai[x].configure(image=imgs[tile_number_1])
 
-ships1 = [3, 3, 4, 5]  # 6 ships in total
-ships2 = [3, 3, 4, 5]
-# ships1 = [2, 3, 4]
-# ships1 = [3]
-# ships2 = [3]
+        FUNCTION2 = random.randint(0, 99)
+        hit = shot(FUNCTION2, board1)
+        if hit == 1 and FUNCTION2 not in hitlist2:
+            hitlist2.append(FUNCTION2)
+            hp1 = hp1 - hit
+        board1 = board_changer(FUNCTION2, board1)
+        tile_number_2 = board_value(FUNCTION2, board1)
+        print(str(tile_number_2))
+        user[FUNCTION2].configure(image=imgs[tile_number_2])
+        if hp1 == 0 or hp2 == 0:
+            if hp1 == 0:
+                print("AI won\n")
+            if hp2 == 0:
+                print("PLayer 1 won\n")
+            sys.exit()
 
-hitlist1 = []
-hitlist2 = []
 
-ship_counter = 0  # helps to put the ships down
-
-ship_handle = ["w", "a", "s", "d", "f", "g"]
-# commands to move a ship during preparation and turn it or fix position
-
-
-class Ship:
-    def __init__(self):
-        self.top = Tk()
-        self.font = font.Font(family="Helvetica", size=18, weight="bold")
-        self.welcome = PhotoImage(file="welcome.gif")
-
-        # borders
-        Label(text="Your board", font=self.font).grid(row=0, column=14, pady=20, columnspan=6)
-        Label(text="Enemy board", font=self.font).grid(row=0, column=3, pady=20, columnspan=6)
-        Label(text="").grid(row=1, column=0, padx=40)
-        Label(text="").grid(row=1, column=11, padx=20)
-        Label(text="").grid(row=12, column=11, pady=20)
-        Button(self.top, image=self.welcome, borderwidth=0, highlightthickness=0).grid(row=13, column=8, columnspan=7)
-
-        # image location
-        # self.gifdir = "/home/soma/Documents/TW/week0606/BSphotos/"
-        # self.img = PhotoImage(file=self.gifdir+"1.gif")
-        self.imgs = [""] * 4
-        self.imgs[0] = PhotoImage(file="1.gif")  # water
-        self.imgs[1] = PhotoImage(file="2.gif")  # missed shot
-        self.imgs[2] = PhotoImage(file="3.gif")  # ship
-        self.imgs[3] = PhotoImage(file="4.gif")  # hit ship
-        # buttonlists
-        self.user = []
-        self.ai = []
-
-        # creating buttons for the user and the ai
-        i = 0
-        for r in range(1, 11):
-            for c in range(1, 11):
-                btn = Button(self.top, image=self.imgs[0], borderwidth=0, height=50, width=50)
-                btn.configure(command=lambda i=i: self.changer(i))
-                btn.grid(row=r, column=c)
-                self.ai.append(btn)
-                i += 1
-
-        for r in range(1, 11):
-            for c in range(12, 22):
-                btn = Button(self.top, image=self.imgs[0], borderwidth=0, height=50, width=50)
-                btn.grid(row=r, column=c)
-                self.user.append(btn)
-
-        self.starter()
-
-        self.top.bind("w", lambda k: self.prep_changer(0))
-        self.top.bind("a", lambda k: self.prep_changer(1))
-        self.top.bind("s", lambda k: self.prep_changer(2))
-        self.top.bind("d", lambda k: self.prep_changer(3))
-        self.top.bind("f", lambda k: self.prep_changer(4))
-        self.top.bind("g", lambda k: self.prep_changer(5))
-
-        self.top = mainloop()
-
-    def starter(self):
-        global phase
-        global board1
-        global board2
-        global ship_handle
-        global ships1
-        global ships2
-        global ship_counter
-        global pos
-        global look
-        global length
-        try:
-            length = ships1[ship_counter]  # the ship's length
-            print("Setting up a start")
-
-            i = 0
-            while i < length:
-                if look == 1:
-                    self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                if look == 2:
-                    self.user[pos + (i)].configure(image=self.imgs[2])
-                i += 1
-        except IndexError:
-            print("No more ships but no worry the game will start now\n")
-
-    def prep_changer(self, key):
-        global phase
-        global board1
-        global board2
-        global ship_handle
-        global ships1
-        global ships2
-        global ship_counter
-        global pos
-        global look
-        global length
-        print("ship list length " + str(len(ships1)))
-        print("phase " + str(phase))
-
-        turn = 0  # 0=no actions this turn yet. 1=somthing already happened
-
+# Displays the all the ship at creation
+def starter(ships1, ship_counter, pos=45, look=1):
+    try:
         length = ships1[ship_counter]  # the ship's length
-        # look = 1 #the ship's direction
-        # pos = pos #the ship's posiion
-        print("ship counter " + str(ship_counter))
+        print("Setting up a start")
+        i = 0
+        while i < length:
+            if look == 1:
+                user[pos + (i * 10)].configure(image=imgs[2])
+            if look == 2:
+                user[pos + (i)].configure(image=imgs[2])
+            i += 1
+    except IndexError:
+        print("No more ships but no worry the game will start now\n")
 
-        command = ship_handle[key]
-        board1 = put_ship_down(pos, length, look, board1)
-        print("pos " + str(pos))
-        print("look " + str(look))
-        print("legth " + str(length) + "\n")
 
-        if phase == 0 and ship_counter < len(ships1):
-            if command not in ship_handle:  # after we bound keys in Tkinter this does nothing
-                print("Unknown command")
-            elif command == ship_handle[0] and turn == 0:  # w moves up
-                if not pos_checker(pos, length, look, board1, command) == 1:
-                    board1 = pick_ship_up(pos, length, look, board1)
-                    i = 0
-                    while i < length:
-                        if look == 1:
-                            self.user[pos + (i * 10)].configure(image=self.imgs[0])
-                        if look == 2:
-                            self.user[pos + (i)].configure(image=self.imgs[0])
-                        i += 1
-                    pos -= 10
-                    turn = 1
-                    if ship_pos_validator(pos, length, look, board1) == 0:
-                        board1 = put_ship_down(pos, length, look, board1)
-                        i = 0
-                        while i < length:
-                            if look == 1:
-                                self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                            if look == 2:
-                                self.user[pos + (i)].configure(image=self.imgs[2])
-                            i += 1
+def prep_changer(key):
+    global phase
+    global board1
+    global board2
+    global ship_handle
+    global ships1
+    global ships2
+    global ship_counter
+    global pos
+    global look
+    global length
+    print("ship list length " + str(len(ships1)))
+    print("phase "+str(phase))
 
-            elif command == ship_handle[1] and turn == 0:  # a moves left
-                if not pos_checker(pos, length, look, board1, command) == 1:
+    turn = 0  # 0=no actions this turn yet. 1=somthing already happened
 
-                    board1 = pick_ship_up(pos, length, look, board1)
-                    i = 0
-                    while i < length:
-                        if look == 1:
-                            self.user[pos + (i * 10)].configure(image=self.imgs[0])
-                        if look == 2:
-                            self.user[pos + (i)].configure(image=self.imgs[0])
-                        i += 1
-                    pos -= 1
-                    turn = 1
-                    if ship_pos_validator(pos, length, look, board1) == 0:
-                        board1 = put_ship_down(pos, length, look, board1)
-                        i = 0
-                        while i < length:
-                            if look == 1:
-                                self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                            if look == 2:
-                                self.user[pos + (i)].configure(image=self.imgs[2])
-                            i += 1
+    length = ships1[ship_counter]  # the ship's length
+    # look = 1 #the ship's direction
+    # pos = pos #the ship's posiion
+    print("ship counter " + str(ship_counter))
 
-            elif command == ship_handle[2] and turn == 0:  # s moves down
-                if not pos_checker(pos, length, look, board1, command) == 1:
+    command = ship_handle[key]
+    print("pos "+str(pos))
+    print("look "+str(look))
+    print("legth "+str(length)+"\n")
 
-                    board1 = pick_ship_up(pos, length, look, board1)
-                    i = 0
-                    while i < length:
-                        if look == 1:
-                            self.user[pos + (i * 10)].configure(image=self.imgs[0])
-                        if look == 2:
-                            self.user[pos + (i)].configure(image=self.imgs[0])
-                        i += 1
-                    pos += 10
-                    turn = 1
-                    if ship_pos_validator(pos, length, look, board1) == 0:
-                        board1 = put_ship_down(pos, length, look, board1)
-                        i = 0
-                        while i < length:
-                            if look == 1:
-                                self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                            if look == 2:
-                                self.user[pos + (i)].configure(image=self.imgs[2])
-                            i += 1
-
-            elif command == ship_handle[3] and turn == 0:  # d mves right
-                if not pos_checker(pos, length, look, board1, command) == 1:
-                    board1 = pick_ship_up(pos, length, look, board1)
-                    i = 0
-                    while i < length:
-                        if look == 1:
-                            self.user[pos + (i * 10)].configure(image=self.imgs[0])
-                        if look == 2:
-                            self.user[pos + (i)].configure(image=self.imgs[0])
-                        i += 1
-                    pos += 1
-                    turn = 1
-                    if ship_pos_validator(pos, length, look, board1) == 0:
-                        board1 = put_ship_down(pos, length, look, board1)
-                        i = 0
-                        while i < length:
-                            if look == 1:
-                                self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                            if look == 2:
-                                self.user[pos + (i)].configure(image=self.imgs[2])
-                            i += 1
-
-            elif command == ship_handle[4] and look == 1 and turn == 0:  # f changes direction
-                if not pos_checker(pos, length, look, board1, command) == 1:
-                    board1 = pick_ship_up(pos, length, look, board1)
-                    i = 0
-                    while i < length:
-                        if look == 1:
-                            self.user[pos + (i * 10)].configure(image=self.imgs[0])
-                        if look == 2:
-                            self.user[pos + (i)].configure(image=self.imgs[0])
-                        i += 1
-                    look = 2
-                    turn = 1
-                    if ship_pos_validator(pos, length, look, board1) == 0:
-                        board1 = put_ship_down(pos, length, look, board1)
-                        i = 0
-                        while i < length:
-                            if look == 1:
-                                self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                            if look == 2:
-                                self.user[pos + (i)].configure(image=self.imgs[2])
-                            i += 1
-
-            elif command == ship_handle[4] and look == 2 and turn == 0:
-                if not pos_checker(pos, length, look, board1, command) == 1:
-                    board1 = pick_ship_up(pos, length, look, board1)
-                    i = 0
-                    while i < length:
-                        self.user[pos + (i * 1)].configure(image=self.imgs[0])
-                        i += 1
-                    look = 1
-                    turn = 1
-                    if ship_pos_validator(pos, length, look, board1) == 0:
-                        board1 = put_ship_down(pos, length, look, board1)
-                        i = 0
-                        while i < length:
-                            if look == 1:
-                                self.user[pos + (i * 10)].configure(image=self.imgs[2])
-                            if look == 2:
-                                self.user[pos + (i * 1)].configure(image=self.imgs[2])
-                            i += 1
-
-            elif command == ship_handle[5] and turn == 0:  # g puts the ship down
-                board1 = pick_ship_up(pos, length, look, board1)
+    if phase == 0 and ship_counter < len(ships1):
+        if command == ship_handle[0] and turn == 0:  # w moves up
+            if not pos_checker(pos, length, look, board1, command) == 1:
+                for i in range(length):
+                    if look == 1:
+                        user[pos + (i * 10)].configure(image=imgs[0])
+                    if look == 2:
+                        user[pos + (i)].configure(image=imgs[0])
+                pos -= 10
+                turn = 1
                 if ship_pos_validator(pos, length, look, board1) == 0:
-                    board1 = put_ship_down(pos, length, look, board1)
-                    turn = 1
-                    i = 0
-                    while i < length:
+                    for i in range(length):
+
                         if look == 1:
-                            self.user[pos + (i * 10)].configure(image=self.imgs[2])
+                            user[pos + (i * 10)].configure(image=imgs[2])
                         if look == 2:
-                            self.user[pos + (i)].configure(image=self.imgs[2])
-                        i += 1
-                print(board1)
+                            user[pos + (i)].configure(image=imgs[2])
+
+        elif command == ship_handle[1] and turn == 0:  # a moves left
+            if not pos_checker(pos, length, look, board1, command) == 1:
+                for i in range(length):
+                    if look == 1:
+                        user[pos + (i * 10)].configure(image=imgs[0])
+                    if look == 2:
+                        user[pos + (i)].configure(image=imgs[0])
+                pos -= 1
+                turn = 1
+                if ship_pos_validator(pos, length, look, board1) == 0:
+                    for i in range(length):
+                        if look == 1:
+                            user[pos + (i * 10)].configure(image=imgs[2])
+                        if look == 2:
+                            user[pos + (i)].configure(image=imgs[2])
+
+        elif command == ship_handle[2] and turn == 0:  # s moves down
+            if not pos_checker(pos, length, look, board1, command) == 1:
+                for i in range(length):
+                    if look == 1:
+                        user[pos + (i * 10)].configure(image=imgs[0])
+                    if look == 2:
+                        user[pos + (i)].configure(image=imgs[0])
+                pos += 10
+                turn = 1
+                if ship_pos_validator(pos, length, look, board1) == 0:
+                    for i in range(length):
+                        if look == 1:
+                            user[pos + (i * 10)].configure(image=imgs[2])
+                        if look == 2:
+                            user[pos + (i)].configure(image=imgs[2])
+
+        elif command == ship_handle[3] and turn == 0:  # d mves right
+            if not pos_checker(pos, length, look, board1, command) == 1:
+                for i in range(length):
+                    if look == 1:
+                        user[pos + (i * 10)].configure(image=imgs[0])
+                    if look == 2:
+                        user[pos + (i)].configure(image=imgs[0])
+                pos += 1
+                turn = 1
+                if ship_pos_validator(pos, length, look, board1) == 0:
+                    for i in range(length):
+                        if look == 1:
+                            user[pos + (i * 10)].configure(image=imgs[2])
+                        if look == 2:
+                            user[pos + (i)].configure(image=imgs[2])
+
+        elif command == ship_handle[4] and look == 1 and turn == 0:  # f changes direction
+            if not pos_checker(pos, length, look, board1, command) == 1:
+                for i in range(length):
+                    if look == 1:
+                        user[pos + (i * 10)].configure(image=imgs[0])
+                    if look == 2:
+                        user[pos + (i)].configure(image=imgs[0])
+                look = 2
+                turn = 1
+                if ship_pos_validator(pos, length, look, board1) == 0:
+                    for i in range(length):
+
+                        if look == 1:
+                            user[pos + (i * 10)].configure(image=imgs[2])
+                        if look == 2:
+                            user[pos + (i)].configure(image=imgs[2])
+
+        elif command == ship_handle[4] and look == 2 and turn == 0:
+            if not pos_checker(pos, length, look, board1, command) == 1:
+                for i in range(length):
+                    user[pos + (i * 1)].configure(image=imgs[0])
                 look = 1
-                pos = 45
-                ship_counter += 1
-                self.starter()
-        if ship_counter == len(ships1):
-            phase = 1
-            ship_counter = 0
-        if phase == 1:
-            phase = prep_phase_AI(ship_handle, ships2, board2, 0)
-            print(board2)
-        print("\n")
-    # click eventhandler to change pics on user and ai buttons | z, w változó
-    # (user és AI képe), x, y változó (ai kép sorszáma)
+                turn = 1
+                if ship_pos_validator(pos, length, look, board1) == 0:
+                    for i in range(length):
+                        if look == 1:
+                            user[pos + (i * 10)].configure(image=imgs[2])
+                        if look == 2:
+                            user[pos + (i * 1)].configure(image=imgs[2])
 
-    def changer(self, x):
-        global phase
-        global board1
-        global board2
-        global hp1
-        global hp2
-        global hitlist1
-        global hitlist2
-
-        if phase == 2:
-            hit = shot(x, board2)
-            if hit == 1 and x not in hitlist1:
-                hitlist1.append(x)
-                hp2 = hp2 - hit
-            board2 = board_changer(x, board2)
-            tile_number_1 = board_value(x, board2)
-            print(str(tile_number_1))
-            self.ai[x].configure(image=self.imgs[tile_number_1])
-
-            FUNCTION2 = random.randint(0, 99)
-            hit = shot(FUNCTION2, board1)
-            if hit == 1 and FUNCTION2 not in hitlist2:
-                hitlist2.append(FUNCTION2)
-                hp1 = hp1 - hit
-            board1 = board_changer(FUNCTION2, board1)
-            tile_number_2 = board_value(FUNCTION2, board1)
-            print(str(tile_number_2))
-            self.user[FUNCTION2].configure(image=self.imgs[tile_number_2])
-            if hp1 == 0 or hp2 == 0:
-                if hp1 == 0:
-                    print("AI won\n")
-                if hp2 == 0:
-                    print("PLayer 1 won\n")
-                sys.exit()
+        elif command == ship_handle[5] and turn == 0:  # g puts the ship down
+            if ship_pos_validator(pos, length, look, board1) == 0:
+                board1 = put_ship_down(pos, length, look, board1)
+                turn = 1
+                for i in range(length):
+                    if look == 1:
+                        user[pos + (i * 10)].configure(image=imgs[2])
+                    if look == 2:
+                        user[pos + (i)].configure(image=imgs[2])
+            print(board1)
+            look = 1
+            pos = 45
+            ship_counter += 1
+            starter(ships1, ship_counter)
+    if ship_counter == len(ships1):
+        phase = 1
+        ship_counter = 0
+    if phase == 1:
+        phase = prep_phase_AI(ship_handle, ships2, board2, 0)
+        print(board2)
+    print("\n")
+# click eventhandler to change pics on user and ai buttons | z, w változó
+# (user és AI képe), x, y változó (ai kép sorszáma)
 
 
 # prep phase
-
 # phase = 0
 # 0 = prep phase
 # 1 = ai prep phase
 # 2 = battle phase
-
 # hp1 = 3 #predetermined
 # hp2 = 3
-
 # board2 = [0]*100 # from 0-99 a 100 tiles
 # board values:
 # 0 - nothing
@@ -353,27 +224,33 @@ class Ship:
 # 4 - missed shot
 # 0th square on both boards is ignored
 # a-0, b-1, c-2, d-3, e-4, f-5, g-6, h-7, i-8, j-9
-
 # putting down the ships
 # ships1 = [2, 2, 2, 2, 3, 3, 3, 4, 4, 5] #10 ships in total
 # ships1 = [2, 3, 4]
 # ship value means how long the ship is.
 # If it's 0 the ship is put down on the board and we move on to the next ship.
-
-
-def pos_checker(pos, length, direction, board, command):
+def pos_checker(pos, length, look, board, command):
     # returns 0 if new pos is ok
     # returns 1 if new pos is bad
     new_pos = pos
     new_pos -= 10
     if command == "w" and new_pos < 0:
-        # since we step 10 in both vertical direction
+        # since we step 10 in both vertical look
         # if we step out from the game board we allways
         # reduce our pos number uner 0
         # s similar but we always go over 99
 
         print("You would step out of the gameboard!")
         return 1
+    if command == "w":
+        if look == 2:
+            for i in range(length):
+                if board[new_pos+i] == 1:
+                    print("You'd step on another ship")
+                    return 1
+        elif look == 1 and board[new_pos] == 1:
+            print("You'd step on another ship")
+            return 1
     new_pos = pos
     new_pos -= 1
     new_pos = new_pos % 10
@@ -388,9 +265,18 @@ def pos_checker(pos, length, direction, board, command):
     if command == "s" and new_pos > 99:
         print("You would step out of the gameboard!")
         return 1
+    if command == "s":
+        if look == 2:
+            for i in range(length):
+                if board[new_pos+i] == 1:
+                    print("You'd step on another ship")
+                    return 1
+        elif look == 1 and board[new_pos+(length*10)] == 1:
+            print("You'd step on another ship")
+            return 1
     new_pos = pos
     new_pos = new_pos + (length * 10)
-    if command == "s" and direction == 1:
+    if command == "s" and look == 1:
         if new_pos > 99:
             print("You would step out of the gameboard!")
             return 1
@@ -403,24 +289,25 @@ def pos_checker(pos, length, direction, board, command):
     new_pos = pos
     new_pos += (length * 1)
     new_pos = new_pos % 10
-    if command == "d" and direction == 2:
+    if command == "d" and look == 2:
         if new_pos == 0:
             print("You would step out of the gameboard!")
             return 1
 
     new_pos = pos
     i = 0
-    if command == "f" and direction == 1:
+    if command == "f" and look == 1:
         while i < length:
-            new_pos = new_pos + i
+            new_pos = new_pos + 1
             new_pos = new_pos % 10
-            if new_pos == 0:
-                print ("You would step out of the gameboard!")
-                return 1
+            if i != 0:
+                if new_pos == 0:
+                    print ("You would step out of the gameboard!")
+                    return 1
             i += 1
     new_pos = pos
     i = 0
-    if command == "f" and direction == 2:
+    if command == "f" and look == 2:
         while i < length:
             new_pos = new_pos + 10
             if new_pos > 99:
@@ -430,13 +317,13 @@ def pos_checker(pos, length, direction, board, command):
     return 0
 
 
-def ship_pos_validator(pos, length, direction, board):
+def ship_pos_validator(pos, length, look, board):
     # validates if the ship can be put down at it's position
     # returns with 0 if the location is valid
     # returns with 1 if the location is not valid
     i = 0  # variable to check if it is possible to put the ship down
     while i < length:
-        if direction == 1:
+        if look == 1:
             try:
                 if not board[pos + (i * 10)] == 0:
                     print("You can't put that ship there")
@@ -444,7 +331,7 @@ def ship_pos_validator(pos, length, direction, board):
             except IndexError:
                 print("You can't put that ship there")
                 return 1
-        elif direction == 2:
+        elif look == 2:
             try:
                 if not board[pos + i] == 0:
                     print("You can't put that ship there")
@@ -453,37 +340,28 @@ def ship_pos_validator(pos, length, direction, board):
                 print("You can't put that ship there")
                 return 1
         i += 1
-    i = 1
-    new_pos = pos
-    while i < length:
-        new_pos = new_pos + i
-        new_pos = new_pos % 10
-        if direction == 2 and new_pos == 0:
-            print("You can't put that ship there")
-            return 1
-        i += 1
     return 0
 
 
-def pick_ship_up(pos, length, direction, board):
+def pick_ship_up(pos, length, look, board):
     i = 0
-    if direction == 1:
+    if look == 1:
         while i < length:
             board[pos + (i * 10)] = 0
             i += 1
-    if direction == 2:
+    if look == 2:
         while i < length:
             board[pos + i] = 0
             i += 1
     return board
 
 
-def put_ship_down(pos, length, direction, board):
+def put_ship_down(pos, length, look, board):
     i = 0
     while i < length:
-        if direction == 1:
+        if look == 1:
             board[pos + (i * 10)] = 1
-        if direction == 2:
+        if look == 2:
             board[pos + i] = 1
         i += 1
     return board
@@ -646,9 +524,83 @@ def battle(x):
     if hp2 == 0:
         print("PLayer 1 won\n")
 
+# ##########################################################################
+# ################### THIS IS THE MAIN FUNCTION #############################
 
-Ship()
 
-# battle(board1, board2)
-# print("\n")
-# print(board2)
+phase = 0
+# 0 = prep phase
+# 1 = ai prep phase
+# 2 = battle phase
+
+hp1 = 15  # predetermined
+hp2 = 15  # got to pay attention!!!!
+
+board1 = [0] * 100  # from 0-99 a 100 tiles
+board2 = [0] * 100  # from 0-99 a 100 tiles
+
+pos = 45
+look = 1
+
+ships1 = [3, 3, 4, 5]
+ships2 = [3, 3, 4, 5]
+
+hitlist1 = []
+hitlist2 = []
+
+ship_counter = 0  # helps to put the ships down
+
+ship_handle = ["w", "a", "s", "d", "f", "g"]
+# commands to move a ship during preparation and turn it or fix position
+
+top = Tk()
+font = font.Font(family="Helvetica", size=18, weight="bold")
+welcome = PhotoImage(file="welcome.gif")
+
+# borders
+Label(text="Your board", font=font).grid(row=0, column=14, pady=20, columnspan=6)
+Label(text="Enemy board", font=font).grid(row=0, column=3, pady=20, columnspan=6)
+Label(text="").grid(row=1, column=0, padx=40)
+Label(text="").grid(row=1, column=11, padx=20)
+Label(text="").grid(row=12, column=11, pady=20)
+Button(top, image=welcome, borderwidth=0, highlightthickness=0).grid(row=13, column=8, columnspan=7)
+
+# image location
+# gifdir = "/home/soma/Documents/TW/week0606/BSphotos/"
+# img = PhotoImage(file=gifdir+"1.gif")
+imgs = [""] * 4
+imgs[0] = PhotoImage(file="1.gif")  # water
+imgs[1] = PhotoImage(file="2.gif")  # missed shot
+imgs[2] = PhotoImage(file="3.gif")  # ship
+imgs[3] = PhotoImage(file="4.gif")  # hit ship
+# buttonlists
+user = []
+ai = []
+
+# creating buttons for the user and the ai
+i = 0
+for r in range(1, 11):
+    for c in range(1, 11):
+        btn = Button(top, image=imgs[0], borderwidth=0, height=50, width=50)
+        btn.configure(command=lambda i=i: changer(i))
+        btn.grid(row=r, column=c)
+        ai.append(btn)
+        i += 1
+
+for r in range(1, 11):
+    for c in range(12, 22):
+        btn = Button(top, image=imgs[0], borderwidth=0, height=50, width=50)
+        btn.grid(row=r, column=c)
+        user.append(btn)
+
+
+top.bind("w", lambda k: prep_changer(0))
+top.bind("a", lambda k: prep_changer(1))
+top.bind("s", lambda k: prep_changer(2))
+top.bind("d", lambda k: prep_changer(3))
+top.bind("f", lambda k: prep_changer(4))
+top.bind("g", lambda k: prep_changer(5))
+
+starter(ships1, ship_counter)
+
+top = mainloop()
