@@ -261,19 +261,33 @@ def pos_checker(pos, length, look, board, command):
         print("You would step out of the gameboard!")
         return 1
     new_pos = pos
-    new_pos = new_pos + 10
+    new_pos -= 1
+    if command == "a":
+        if look == 1:
+            for i in range(length):
+                if board[new_pos+i*10] == 1:
+                    return 1
+        if look == 2:
+                if board[new_pos] == 1:
+                    return 1
+    new_pos = pos
+    new_pos = new_pos+10
     if command == "s" and new_pos > 99:
         print("You would step out of the gameboard!")
         return 1
+    new_pos = pos
     if command == "s":
         if look == 2:
             for i in range(length):
-                if board[new_pos+i] == 1:
+                if board[new_pos+10+i] == 1:
                     print("You'd step on another ship")
                     return 1
-        elif look == 1 and board[new_pos+(length*10)] == 1:
-            print("You'd step on another ship")
-            return 1
+        elif look == 1:
+            if new_pos+length*10 < 99:
+                if board[new_pos+(length*10)] == 1:
+                    print("You'd step on another ship")
+                    return 1
+
     new_pos = pos
     new_pos = new_pos + (length * 10)
     if command == "s" and look == 1:
@@ -287,6 +301,17 @@ def pos_checker(pos, length, look, board, command):
         print("You would step out of the gameboard!")
         return 1
     new_pos = pos
+    new_pos += 1
+    if command == "d":
+        if look == 1:
+            for i in range(length):
+                if board[new_pos+i*10] == 1:
+                    return 1
+        if look == 2:
+            for i in range(length):
+                if board[new_pos+i] == 1:
+                    return 1
+    new_pos = pos
     new_pos += (length * 1)
     new_pos = new_pos % 10
     if command == "d" and look == 2:
@@ -295,16 +320,14 @@ def pos_checker(pos, length, look, board, command):
             return 1
 
     new_pos = pos
-    i = 0
     if command == "f" and look == 1:
-        while i < length:
-            new_pos = new_pos + 1
+        for i in range(length):
+            new_pos = pos + i
             new_pos = new_pos % 10
             if i != 0:
                 if new_pos == 0:
                     print ("You would step out of the gameboard!")
                     return 1
-            i += 1
     new_pos = pos
     i = 0
     if command == "f" and look == 2:
@@ -321,11 +344,11 @@ def ship_pos_validator(pos, length, look, board):
     # validates if the ship can be put down at it's position
     # returns with 0 if the location is valid
     # returns with 1 if the location is not valid
-    i = 0  # variable to check if it is possible to put the ship down
-    while i < length:
+    # variable to check if it is possible to put the ship down
+    for i in range(length):
         if look == 1:
             try:
-                if not board[pos + (i * 10)] == 0:
+                if board[pos + (i * 10)] != 0:
                     print("You can't put that ship there")
                     return 1
             except IndexError:
@@ -333,13 +356,12 @@ def ship_pos_validator(pos, length, look, board):
                 return 1
         elif look == 2:
             try:
-                if not board[pos + i] == 0:
+                if board[pos + i] != 0:
                     print("You can't put that ship there")
                     return 1
             except IndexError:
                 print("You can't put that ship there")
                 return 1
-        i += 1
     return 0
 
 
