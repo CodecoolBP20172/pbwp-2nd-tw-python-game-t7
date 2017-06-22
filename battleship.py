@@ -4,6 +4,8 @@ import time
 import random
 from tkinter import font
 
+# Gets called after a button is being pushed.
+
 
 def changer(x):
     global phase
@@ -134,7 +136,7 @@ def prep_changer(key):
                         if look == 2:
                             user[pos + (i)].configure(image=imgs[2])
 
-        elif command == ship_handle[3] and turn == 0:  # d mves right
+        elif command == ship_handle[3] and turn == 0:  # d moves right
             if not pos_checker(pos, length, look, board1, command) == 1:
                 for i in range(length):
                     if look == 1:
@@ -201,30 +203,19 @@ def prep_changer(key):
         phase = prep_phase_AI(ship_handle, ships2, board2, 0)
         print(board2)
     print("\n")
-# click eventhandler to change pics on user and ai buttons | z, w változó
-# (user és AI képe), x, y változó (ai kép sorszáma)
 
-
-# prep phase
-# phase = 0
 # 0 = prep phase
 # 1 = ai prep phase
 # 2 = battle phase
-# hp1 = 3 #predetermined
-# hp2 = 3
 # board2 = [0]*100 # from 0-99 a 100 tiles
 # board values:
 # 0 - nothing
 # 1 - ship
 # 2 - ship that got a hit
 # 4 - missed shot
-# 0th square on both boards is ignored
-# a-0, b-1, c-2, d-3, e-4, f-5, g-6, h-7, i-8, j-9
-# putting down the ships
-# ships1 = [2, 2, 2, 2, 3, 3, 3, 4, 4, 5] #10 ships in total
-# ships1 = [2, 3, 4]
 # ship value means how long the ship is.
-# If it's 0 the ship is put down on the board and we move on to the next ship.
+
+
 def pos_checker(pos, length, look, board, command):
     # returns 0 if new pos is ok
     # returns 1 if new pos is bad
@@ -404,29 +395,6 @@ def prep_phase_AI(ship_handle, ships, board, ship_counter=0):
     return 2
 
 
-def hit_searcher(hitmarker):
-    # returns with 1 if there was a hit inthe last 4 shoots
-    # returns with 0 if there was no hit in th last 4 shoots
-    i = 0
-    counter = len(hitmarker) - 1
-    for i in range(counter):
-        if hitmarker[i] == 1:
-            return 1
-    return 0
-
-
-def hit_hystory(hitmarker):
-    # returns with the number of turns between the current turn and the turn
-    # with the last successfull hit
-    # if returns 6 then there was a problem
-    i = 0
-    counter = len(hitmarker) - 1
-    for i in range(counter):
-        if hitmarker[i] == 2:
-            return i
-    return 6
-
-
 def shot(shot, board):
     # returns with 0 if the shot missed
     # returns with 1 if the shot hit
@@ -506,7 +474,7 @@ phase = 0
 # 2 = battle phase
 
 hp1 = 15  # predetermined
-hp2 = 15  # got to pay attention!!!!
+hp2 = 15
 
 board1 = [0] * 100  # from 0-99 a 100 tiles
 board2 = [0] * 100  # from 0-99 a 100 tiles
@@ -549,9 +517,6 @@ Label6.grid(row=12, column=23, padx=40)
 Button(top, image=welcome, borderwidth=0, highlightthickness=0, command=lambda k=0: sys.exit()).grid(
     row=13, column=8, columnspan=7)
 
-# image location
-# gifdir = "/home/soma/Documents/TW/week0606/BSphotos/"
-# img = PhotoImage(file=gifdir+"1.gif")
 imgs = [""] * 4
 imgs[0] = PhotoImage(file="1.gif")  # water
 imgs[1] = PhotoImage(file="2.gif")  # missed shot
