@@ -5,11 +5,6 @@ import random
 from tkinter import font
 
 
-# One extra variable needed to handle phase
-# TODO: Deduct board2 from prep_changer arguments
-#       Paste the necessary arguments of prep_changer into the key bindings.
-#       Starter doesn't need look == 2
-
 def changer(x):
     global phase
     global board1
@@ -495,7 +490,6 @@ def finish(winner):
     Label5.destroy()
     Label6.destroy()
 
-
     if winner == 0:
         Label(text="You lose", font=font).grid(row=12, column=11, pady=100, padx=100, columnspan=100)
     if winner == 1:
@@ -552,7 +546,8 @@ Label5.grid(row=12, column=11, pady=20)
 Label6 = Label(text="")
 Label6.grid(row=12, column=23, padx=40)
 
-Button(top, image=welcome, borderwidth=0, highlightthickness=0, command=lambda k=0: sys.exit()).grid(row=13, column=8, columnspan=7)
+Button(top, image=welcome, borderwidth=0, highlightthickness=0, command=lambda k=0: sys.exit()).grid(
+    row=13, column=8, columnspan=7)
 
 # image location
 # gifdir = "/home/soma/Documents/TW/week0606/BSphotos/"
