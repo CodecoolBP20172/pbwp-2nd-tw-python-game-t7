@@ -16,34 +16,35 @@ def changer(x):
     global board2
     global hp1
     global hp2
-    global hitlist1
-    global hitlist2
 
     if phase == 2:
         hit = shot(x, board2)
-        if hit == 1 and x not in hitlist1:
-            hitlist1.append(x)
-            hp2 = hp2 - hit
-        board2 = board_changer(x, board2)
-        tile_number_1 = board_value(x, board2)
-        print(str(tile_number_1))
-        ai[x].configure(image=imgs[tile_number_1])
+        if hit != 2:
 
-        FUNCTION2 = random.randint(0, 99)
-        hit = shot(FUNCTION2, board1)
-        if hit == 1 and FUNCTION2 not in hitlist2:
-            hitlist2.append(FUNCTION2)
-            hp1 = hp1 - hit
-        board1 = board_changer(FUNCTION2, board1)
-        tile_number_2 = board_value(FUNCTION2, board1)
-        print(str(tile_number_2))
-        user[FUNCTION2].configure(image=imgs[tile_number_2])
-        if hp1 == 0 or hp2 == 0:
-            if hp1 == 0:
-                print("AI won\n")
-            if hp2 == 0:
-                print("PLayer 1 won\n")
-            sys.exit()
+            if hit == 1:
+                hp2 = hp2 - hit
+            board2 = board_changer(x, board2)
+            board_value_num = board_value(x, board2)
+            print(str(board_value_num))
+            ai[x].configure(image=imgs[board_value_num])
+
+            hit = 2
+            while hit == 2:
+                ai_shot_pos = AI_shotter_for_real(board1)
+                hit = shot(ai_shot_pos, board1)
+                if hit == 1:
+                    hp1 = hp1 - hit
+                board1 = board_changer(ai_shot_pos, board1)
+                board_value_num_2 = board_value(ai_shot_pos, board1)
+                print(str(board_value_num_2))
+                user[ai_shot_pos].configure(image=imgs[board_value_num_2])
+                if hp1 == 0 or hp2 == 0:
+                    if hp1 == 0:
+                        print("AI won\n")
+                        finish(0)
+                    if hp2 == 0:
+                        print("PLayer 1 won\n")
+                        finish(1)
 
 
 # Displays the all the ship at creation
@@ -328,15 +329,21 @@ def pos_checker(pos, length, look, board, command):
                 if new_pos == 0:
                     print ("You would step out of the gameboard!")
                     return 1
+            new_pos = pos + i
+            if board[new_pos] != 0:
+                print("Can't put it in another ship sry")
+                return 1
     new_pos = pos
-    i = 0
     if command == "f" and look == 2:
-        while i < length:
+        for i in range(length):
             new_pos = new_pos + 10
             if new_pos > 99:
                 print ("You would step out of the gameboard!")
                 return 1
-            i += 1
+            new_pos = pos + i * 10
+            if board[new_pos] != 0:
+                print("Can't put it in another ship sry")
+                return 1
     return 0
 
 
@@ -359,23 +366,13 @@ def ship_pos_validator(pos, length, look, board):
                 if board[pos + i] != 0:
                     print("You can't put that ship there")
                     return 1
+                if i > 0 and (pos + i) % 10 == 0:
+                    print("You can't put that ship there")
+                    return 1
             except IndexError:
                 print("You can't put that ship there")
                 return 1
     return 0
-
-
-def pick_ship_up(pos, length, look, board):
-    i = 0
-    if look == 1:
-        while i < length:
-            board[pos + (i * 10)] = 0
-            i += 1
-    if look == 2:
-        while i < length:
-            board[pos + i] = 0
-            i += 1
-    return board
 
 
 def put_ship_down(pos, length, look, board):
@@ -393,9 +390,6 @@ def put_ship_down(pos, length, look, board):
 def prep_phase_AI(ship_handle, ships, board, ship_counter=0):
     print("AIs turn to prepare")
     print("ship list length " + str(len(ships)))
-
-    pos = 45  # or e5
-    direction = 1  # 1 is down, 2 is right
 
     while ship_counter < len(ships):
         cur_ship = [0, 0, 0]  # the ship we want to put down
@@ -438,48 +432,16 @@ def hit_hystory(hitmarker):
     return 6
 
 
-def AI_shot_pos_checker(pos, hit_hystory):
-    new_pos = pos
-    new_pos -= 10
-    if hit_hystory == 1 and new_pos < 0:
-        return 1
-    new_pos = pos
-    new_pos -= 1
-    new_pos = new_pos % 10
-    if hit_hystory == 2 and new_pos == 9:
-        return 1
-    new_pos = pos
-    new_pos = new_pos + 10
-    if hit_hystory == 3 and new_pos > 99:
-        return 1
-    new_pos = pos
-    new_pos += 1
-    new_pos = new_pos % 10
-    if hit_hystory == 4 and new_pos == 0:
-        return 1
-    return 0
-
-
-def AI_shot(hitmarker, hit_loc, board):  # returns with the AI-s shot coordinate
-    torpedo = 0
-    if not hit_searcher(hitmarker) == 1:
-        torpedo = random.randint(0, 99)
-        return torpedo
-    elif hit_hystory == 6:
-        print("there is a problem as hit hystory returned 6")
-    elif hit_hystory == 0:
-        print("ther is a problem as hithistory returned 0")
-    elif hit_hystory == 1:
-        torpedo = hit_loc + 10
-
-
 def shot(shot, board):
     # returns with 0 if the shot missed
     # returns with 1 if the shot hit
-    if board[shot] == 1 or board[shot] == 2:
+    if board[shot] == 1:
         print("Hit!!\n")
         return 1
-    else:
+    elif board[shot] == 2 or board[shot] == 4:
+        print("You already shot there")
+        return 2
+    elif board[shot] == 0:
         print("Miss\n")
         return 0
 
@@ -502,49 +464,43 @@ def board_value(x, board):
         return 1  # picture 2 is a missed shot
 
 
-def battle(x):
-    global board1
-    global board2
-    # p1, board1, hp1 and p1_turn all belongs to p1.
-    # the board1 contains all his ships
-    # p1 shoots at p2s board under his turn (p1_turn=p2_turn)
-    hp1 = 2  # predetermined
-    hp2 = 2
-    p1_turn = 0
-    p2_turn = 0
+def AI_shotter_for_real(board):
+    hit_list = []
+    operations = ["+ 1", "- 1", "+ 10", "- 10"]
+    for index in range(len(board)):
+        if board[index] == 2:
+            for op_index in operations:
+                str_index = str(index)
+                real_index_for_shooting = eval(str_index + op_index)
+                if board[real_index_for_shooting] == 1 or board[real_index_for_shooting] == 0:
+                    hit_list.append(real_index_for_shooting)
+    if len(hit_list) > 0:
+        shoot_pos = hit_list[random.randint(0, len(hit_list)-1)]
+    else:
+        shoot_pos = random.randint(0, 99)
+    return shoot_pos
 
-    # AI things
-    hitmarker = [0] * 5
-    # after a hit there are 4 other possible locations to shoot
-    # stored values: 0-to be determined, 1-successfull shot, 2-missed shot
-    hit_loc = 0
 
-    # print("The battle begins!")
-    # print("Sink all the enemy ships to win!\n\n")
+def finish(winner):
 
-    while hp1 > 0 and hp2 > 0:
-        if p1_turn == p2_turn:  # p1-s turn
-            print("p1-s turn")
-            # p1 shoots at p2s board where p2s ships are
-            hit = shot(x, board2)
-            hp2 = hp2 - hit
-            board2 = board_changer(x, board2)
-            p1_turn += 1
-            continue
-        if p1_turn > p2_turn:  # p2s turn AI turn
-            print("AI-s turn")
-            x = random.randint(0, 99)
-            print(str(x))
-            # p2 shoots at p1s board where p1s ships are
-            hit = shot(x, board1)
-            hp1 = hp1 - hit
-            board1 = board_changer(x, board1)
-            p2_turn += 1
-            continue
-    if hp1 == 0:
-        print("AI won\n")
-    if hp2 == 0:
-        print("PLayer 1 won\n")
+    time.sleep(0.75)
+    for button in ai:
+        button.destroy()
+    for button in user:
+        button.destroy()
+    Label1.destroy()
+    Label2.destroy()
+    Label3.destroy()
+    Label4.destroy()
+    Label5.destroy()
+    Label6.destroy()
+
+
+    if winner == 0:
+        Label(text="You lose", font=font).grid(row=12, column=11, pady=100, padx=100, columnspan=100)
+    if winner == 1:
+        Label(text="You won", font=font).grid(row=12, column=11, pady=100, padx=100, columnspan=100)
+
 
 # ##########################################################################
 # ################### THIS IS THE MAIN FUNCTION #############################
@@ -567,9 +523,6 @@ look = 1
 ships1 = [3, 3, 4, 5]
 ships2 = [3, 3, 4, 5]
 
-hitlist1 = []
-hitlist2 = []
-
 ship_counter = 0  # helps to put the ships down
 
 ship_handle = ["w", "a", "s", "d", "f", "g"]
@@ -577,15 +530,29 @@ ship_handle = ["w", "a", "s", "d", "f", "g"]
 
 top = Tk()
 font = font.Font(family="Helvetica", size=18, weight="bold")
+
 welcome = PhotoImage(file="welcome.gif")
 
 # borders
-Label(text="Your board", font=font).grid(row=0, column=14, pady=20, columnspan=6)
-Label(text="Enemy board", font=font).grid(row=0, column=3, pady=20, columnspan=6)
-Label(text="").grid(row=1, column=0, padx=40)
-Label(text="").grid(row=1, column=11, padx=20)
-Label(text="").grid(row=12, column=11, pady=20)
-Button(top, image=welcome, borderwidth=0, highlightthickness=0).grid(row=13, column=8, columnspan=7)
+Label1 = Label(text="Your board", font=font)
+Label1.grid(row=0, column=14, pady=20, columnspan=6)
+
+Label2 = Label(text="Enemy board", font=font)
+Label2.grid(row=0, column=3, pady=20, columnspan=6)
+
+Label3 = Label(text="")
+Label3.grid(row=1, column=0, padx=40)
+
+Label4 = Label(text="")
+Label4.grid(row=1, column=11, padx=20)
+
+Label5 = Label(text="")
+Label5.grid(row=12, column=11, pady=20)
+
+Label6 = Label(text="")
+Label6.grid(row=12, column=23, padx=40)
+
+Button(top, image=welcome, borderwidth=0, highlightthickness=0, command=lambda k=0: sys.exit()).grid(row=13, column=8, columnspan=7)
 
 # image location
 # gifdir = "/home/soma/Documents/TW/week0606/BSphotos/"
