@@ -192,10 +192,14 @@ def prep_changer(key):
                     if look == 2:
                         user[pos + (i)].configure(image=imgs[2])
             print(board1)
-            look = 1
-            pos = 45
             ship_counter += 1
-            starter(ships1, ship_counter)
+            try:
+                while ship_pos_validator(pos, ships1[ship_counter], look, board1) != 0:
+                    look = random.randint(1, 2)  # the ship's direction RANDOM
+                    pos = random.randint(0, 99)  # the ship's position RANDOM
+            except(IndexError):
+                pass
+            starter(ships1, ship_counter, pos, look)
     if ship_counter == len(ships1):
         phase = 1
         ship_counter = 0
@@ -435,8 +439,11 @@ def AI_shotter_for_real(board):
             for op_index in operations:
                 str_index = str(index)
                 real_index_for_shooting = eval(str_index + op_index)
-                if board[real_index_for_shooting] == 1 or board[real_index_for_shooting] == 0:
-                    hit_list.append(real_index_for_shooting)
+                try:
+                    if board[real_index_for_shooting] == 1 or board[real_index_for_shooting] == 0:
+                        hit_list.append(real_index_for_shooting)
+                except(IndexError):
+                    continue
     if len(hit_list) > 0:
         shoot_pos = hit_list[random.randint(0, len(hit_list)-1)]
     else:
